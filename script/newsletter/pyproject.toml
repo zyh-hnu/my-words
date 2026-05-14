@@ -1,0 +1,19 @@
+[project]
+name = "my-newsletter"
+version = "0.1.0"
+description = "每日技术 Newsletter + 个人日记自动生成系统"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.28.1",
+    "feedparser>=6.0.11",
+    "beautifulsoup4>=4.12.3",
+    "html2text>=2024.2.26",
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "python-dateutil>=2.9.0.post0",
+    "pytz>=2025.2",
+]
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"

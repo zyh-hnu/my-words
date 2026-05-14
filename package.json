@@ -1,0 +1,19 @@
+{
+  "name": "my-words",
+  "version": "1.0.0",
+  "description": "每日技术 Newsletter + 个人日记自动生成系统",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/my-words.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/your-username/my-words/issues"
+  },
+  "homepage": "https://github.com/your-username/my-words#readme"
+}
