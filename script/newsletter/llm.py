@@ -4,9 +4,11 @@
 """
 
 import atexit
+import random
 import time
 from typing import Optional
 
+import httpx
 from openai import OpenAI, APIError, APIConnectionError, RateLimitError
 from openai._exceptions import InternalServerError
 
@@ -16,8 +18,9 @@ import tokenizer
 
 logger = news_utils.setup_logger(__name__)
 
-_MAX_RETRIES = 3
-_BASE_DELAY = 2.0
+# 重试设置：最多 5 次，间隔 10s/20s/40s/80s/80s（含随机抖动）
+_MAX_RETRIES = 5
+_BASE_DELAY = 10.0
 
 
 # 全局统计变量
@@ -69,11 +72,11 @@ def get_llm_stats() -> str:
 
 
 def _build_client() -> OpenAI:
-    """构建 OpenAI 客户端（复用连接池）"""
+    """构建 OpenAI 客户端（复用连接池，长超时应对网络波动）"""
     return OpenAI(
         api_key=config.settings.openai_api_key,
         base_url=config.settings.openai_base_url,
-        timeout=60.0,
+        timeout=httpx.Timeout(150.0, connect=30.0),
         max_retries=0,  # 自定义重试逻辑
     )
 
@@ -83,12 +86,11 @@ def _should_retry(exception: Exception) -> bool:
     return isinstance(exception, (APIConnectionError, RateLimitError, InternalServerError))
 
 
-def _call_llm(system_prompt: str, user_prompt: str) -> str:
-    """调用 LLM，带重试机制"""
+def _call_llm(system_prompt: str, user_prompt: str) -> Optional[str]:
+    """调用 LLM，带重试机制，失败返回 None"""
     client = _build_client()
     model = config.settings.llm_model
 
-    last_exception = None
     for attempt in range(_MAX_RETRIES + 1):
         try:
             response = client.chat.completions.create(
@@ -101,21 +103,27 @@ def _call_llm(system_prompt: str, user_prompt: str) -> str:
                 max_tokens=3000,
             )
         except Exception as e:
-            last_exception = e
             if attempt < _MAX_RETRIES and _should_retry(e):
-                delay = _BASE_DELAY * (2 ** attempt)
-                logger.warning(f"LLM 请求失败 (第{attempt + 1}次)，{delay:.0f}s 后重试: {type(e).__name__}: {e}")
+                delay = _BASE_DELAY * (2 ** attempt) + random.uniform(0, 5)
+                logger.warning(
+                    f"LLM 请求失败 ({config.settings.llm_model}, "
+                    f"第{attempt + 1}/{_MAX_RETRIES} 次重试, "
+                    f"等待 {delay:.0f}s): {type(e).__name__}: {e}"
+                )
                 time.sleep(delay)
                 continue
-            raise  # 最后一次失败或不可重试的错误直接抛出
+            logger.error(
+                f"LLM 请求最终失败 ({config.settings.llm_model}, "
+                f"已重试 {attempt} 次): {type(e).__name__}: {e}"
+            )
+            return None
 
         result = response.choices[0].message.content
-        if result is None:
-            raise ValueError("LLM 返回内容为空")
+        if not result:
+            return None
         return result.strip()
 
-    # 理论上不会执行到这里，但保留兜底
-    raise last_exception  # type: ignore
+    return None
 
 
 def one_shoot(system_prompt: str, user_prompt: str) -> Optional[str]:
@@ -131,23 +139,20 @@ def one_shoot(system_prompt: str, user_prompt: str) -> Optional[str]:
     """
     start_time = time.time()
 
-    try:
-        result = _call_llm(system_prompt, user_prompt)
-        duration = time.time() - start_time
+    result = _call_llm(system_prompt, user_prompt)
+    duration = time.time() - start_time
 
+    if result is not None:
         llm_stats.add_call(
             input_msg=system_prompt + user_prompt,
             output_msg=result,
             duration=duration,
         )
-
         logger.info(f"LLM 调用成功 (模型: {config.settings.llm_model}, 耗时: {duration:.2f}s)")
-        return result
+    else:
+        logger.error(f"LLM 调用失败 ({config.settings.llm_model}, 耗时: {duration:.2f}s)")
 
-    except Exception as e:
-        duration = time.time() - start_time
-        logger.error(f"LLM 调用失败 ({config.settings.llm_model}, 耗时: {duration:.2f}s): {type(e).__name__}: {e}")
-        return None
+    return result
 
 
 def concurrent_one_shoot(prompts: list[tuple[str, str]]) -> list[Optional[str]]:

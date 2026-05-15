@@ -77,7 +77,9 @@ def fetch_news():
         logger.info("开始对文章内容进行总结")
         summary = summarize_content(content)
         if not summary:
-            raise Exception(f"无法获取文章摘要: {link}")
+            logger.warning(f"LLM 总结失败，跳过美团文章: {title}")
+            final_contents.append(f"### {title}\n\n> {published_date}\n\n[阅读全文]({link})\n\n")
+            continue
         logger.info("总结完成")
         final_contents.append(f"### {title}\n\n> {published_date}\n\n{summary}\n\n[阅读全文]({link})\n\n")
 
