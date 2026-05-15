@@ -178,7 +178,7 @@ def process_top_hn(rss_url: str, slug: str, file_title: str):
 
     filename = get_today_news_file(slug)
     final_content = "\n".join(final_contents)
-    if news_utils.put_file_to_r2_with_today(filename, final_content):
+    if news_utils.put_local_file_with_today(filename, final_content):
         logger.info(f"✓ {file_title} 新闻已保存到 R2: {filename}")
     else:
         logger.error(f"✗ 无法保存 {file_title} 新闻到 R2: {filename}")
@@ -204,14 +204,14 @@ def get_today_news_content() -> str:
     content = []
     for slug, url, title in all_rss_urls():
         filename = get_today_news_file(slug)
-        _content = news_utils.get_file_from_r2_with_today(filename)
+        _content = news_utils.get_local_file_with_today(filename)
         if _content:
             logger.info(f"今天的 {title} 新闻已存在，直接读取: {filename}")
             content.append(_content)
             continue
 
         process_top_hn(url, slug, title)
-        _content = news_utils.get_file_from_r2_with_today(filename)
+        _content = news_utils.get_local_file_with_today(filename)
         assert _content
         content.append(_content)
     return "\n".join(content)

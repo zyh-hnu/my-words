@@ -89,7 +89,7 @@ def fetch_news():
     filename = get_today_news_file()
 
     full_content = "\n".join(final_contents)
-    if news_utils.put_file_to_r2_with_today(filename, full_content):
+    if news_utils.put_local_file_with_today(filename, full_content):
         logger.info(f"美团技术团队内容已保存到: {filename}")
     else:
         logger.error(f"无法保存美团技术团队内容到: {filename}")
@@ -98,14 +98,14 @@ def fetch_news():
 
 def get_today_posts_content():
     filename = get_today_news_file()
-    content = news_utils.get_file_from_r2_with_today(filename)
+    content = news_utils.get_local_file_with_today(filename)
     if content:
         logger.info("今日美图技术团队文章已存在，直接返回内容")
         return content
 
     fetch_news()
     
-    content = news_utils.get_file_from_r2_with_today(filename)
+    content = news_utils.get_local_file_with_today(filename)
     assert content
     return content
 

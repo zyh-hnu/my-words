@@ -128,7 +128,7 @@ def fetch_news():
     # 保存总结到文件
     summarized_content = f"> [原文链接]({link})\n\n" + summarized_content
     summarized_content = f"## AINews - {current_date}\n\n" + summarized_content
-    if news_utils.put_file_to_r2_with_today(sum_filename, summarized_content):
+    if news_utils.put_local_file_with_today(sum_filename, summarized_content):
         logger.info(f"✓ 总结已保存: {sum_filename}")
     else:
         logger.error("✗ 保存总结失败")
@@ -153,14 +153,14 @@ def get_today_news_content() -> str:
     """
     _, sum_filename = get_today_news_file()
 
-    content = news_utils.get_file_from_r2_with_today(sum_filename)
+    content = news_utils.get_local_file_with_today(sum_filename)
     if content:
         logger.info(f"今天的AI新闻摘要已存在: {sum_filename}, 直接读取")
         return content
 
     logger.info(f"今天的AI新闻摘要不存在: {sum_filename}, 开始抓取")
     fetch_news()
-    content = news_utils.get_file_from_r2_with_today(sum_filename)
+    content = news_utils.get_local_file_with_today(sum_filename)
     assert content
     return content
 

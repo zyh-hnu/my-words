@@ -89,7 +89,7 @@ def fetch_latest_weekly():
     """
 
     filename = get_today_news_file()
-    if news_utils.put_file_to_r2_with_today(filename, content):
+    if news_utils.put_local_file_with_today(filename, content):
         logger.info(f"✓ 已保存最新的 Go Weekly 到 R2: {filename}")
     else:
         logger.error("✗ 保存最新的 Go Weekly 到 R2 失败")
@@ -97,14 +97,14 @@ def fetch_latest_weekly():
 
 def get_today_news_content() -> str:
     filename = get_today_news_file()
-    content = news_utils.get_file_from_r2_with_today(filename)
+    content = news_utils.get_local_file_with_today(filename)
     if content:
         logger.info(f"今天的 Go Weekly 已经存在: {filename}")
         return content
 
     fetch_latest_weekly()
 
-    content = news_utils.get_file_from_r2_with_today(filename)
+    content = news_utils.get_local_file_with_today(filename)
     assert content
     return content
 

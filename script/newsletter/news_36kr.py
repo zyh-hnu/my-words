@@ -77,8 +77,8 @@ def fetch_news():
 
     raw_filename, sum_filename = get_r2_object_key()
 
-    news_utils.put_file_to_r2_with_today(raw_filename, "\n".join(raw_contents))
-    news_utils.put_file_to_r2_with_today(sum_filename, "\n".join(sum_contents))
+    news_utils.put_local_file_with_today(raw_filename, "\n".join(raw_contents))
+    news_utils.put_local_file_with_today(sum_filename, "\n".join(sum_contents))
 
 
 def get_today_news_content() -> str:
@@ -86,13 +86,13 @@ def get_today_news_content() -> str:
     获取今天的新闻
     """
     _, sum_filename = get_r2_object_key()
-    content = news_utils.get_file_from_r2_with_today(sum_filename)
+    content = news_utils.get_local_file_with_today(sum_filename)
     if content:
         logger.info(f"今天的36氪新闻已存在，直接返回: {sum_filename}")
         return content
 
     fetch_news()
-    content = news_utils.get_file_from_r2_with_today(sum_filename)
+    content = news_utils.get_local_file_with_today(sum_filename)
     assert content
     return content
 

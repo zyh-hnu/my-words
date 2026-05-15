@@ -80,7 +80,7 @@ def fetch_news():
 
     # 获取文件路径并保存
     filename = get_today_news_file()
-    if news_utils.put_file_to_r2_with_today(filename, "\n".join(final_content)):
+    if news_utils.put_local_file_with_today(filename, "\n".join(final_content)):
         logger.info(f"GitHub Trending 前{limit}个项目摘要已保存到: {filename}")
     else:
         logger.error(f"无法保存GitHub Trending摘要到: {filename}")
@@ -101,7 +101,7 @@ def get_today_news_content() -> str:
     """
     filename = get_today_news_file()
 
-    content = news_utils.get_file_from_r2_with_today(filename)
+    content = news_utils.get_local_file_with_today(filename)
     if content:
         logger.info(f"今天的GitHub Trending新闻已存在，直接返回: {filename}")
         return content
@@ -109,7 +109,7 @@ def get_today_news_content() -> str:
     logger.info(f"今天的GitHub Trending新闻不存在，开始抓取: {filename}")
     fetch_news()
 
-    content = news_utils.get_file_from_r2_with_today(filename)
+    content = news_utils.get_local_file_with_today(filename)
     assert content
     return content
 
