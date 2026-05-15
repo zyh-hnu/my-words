@@ -19,6 +19,7 @@ jobs:
         fetch-depth: 0
         # 使用 PAT 以便能够推送到仓库并触发其他工作流
         token: ${{ secrets.PAT }}
+        persist-credentials: true
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -72,8 +73,7 @@ jobs:
           git commit -m "📰 自动生成每日 newsletter & 日记 $(date +'%Y-%m-%d')"
           
           echo "🚀 开始推送到远程仓库..."
-          git push origin main
-          
+          git push https://x-access-token:${{ secrets.PAT }}@github.com/zyh-hnu/my-words.git master
+
           echo "✅ 已成功提交新文件"
-          echo "🔄 推送完成，这应该会触发 deploy 工作流"
         fi
