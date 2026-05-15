@@ -35,7 +35,8 @@ def main():
     except Exception as e:
         logger.error(f"生成过程中发生错误: {e}")
         push.push_deer(f"生成失败: {e}")
-        raise e
+        logger.info(get_llm_stats())
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -116,22 +116,34 @@ def get_last_newsletter_summary() -> str:
     return ""
 
 
+def _safe_fetch(fetch_fn, name: str, silent: bool = False) -> str:
+    """安全抓取，失败时返回空字符串"""
+    try:
+        result = fetch_fn()
+        return result if result else ""
+    except Exception as e:
+        if not silent:
+            logger.warning(f"获取 {name} 内容失败: {type(e).__name__}: {e}")
+        return ""
+
+
 def generate_newsletter_summary():
     _, summary_filename = get_newsletter_filename()
     if news_utils.get_local_file_with_today(summary_filename):
         logger.info(f"今天的 newsletter 摘要 已经存在，不重复生成: {summary_filename}")
         return
 
-    v2ex = news_v2ex.get_today_news_content()
-    _ = news_meituan.get_today_posts_content()
-    _ = news_go_weekly.get_today_news_content()
-    _ = news_reddit.get_today_news_content()
-    last_newsletter_summary = get_last_newsletter_summary()
-    ai_news_content = news_ai_news.get_today_news_content()
-    github_trending_content = news_github_trending_daily.get_today_news_content()
-    hacker_news_content = news_hacker_news.get_today_news_content()
-    shaoshupai_content = news_shaoshupai.get_today_news_content()
-    # kr36_content = news_36kr.get_today_news_content()
+    # 逐个抓取，单个失败不影响其他
+    v2ex = _safe_fetch(news_v2ex.get_today_news_content, "V2EX")
+    _ = _safe_fetch(news_meituan.get_today_posts_content, "美团技术", silent=True)
+    _ = _safe_fetch(news_go_weekly.get_today_news_content, "Go Weekly", silent=True)
+    _ = _safe_fetch(news_reddit.get_today_news_content, "Reddit", silent=True)
+    last_newsletter_summary = _safe_fetch(get_last_newsletter_summary, "昨日摘要", silent=True)
+    ai_news_content = _safe_fetch(news_ai_news.get_today_news_content, "AI News")
+    github_trending_content = _safe_fetch(news_github_trending_daily.get_today_news_content, "GitHub Trending")
+    hacker_news_content = _safe_fetch(news_hacker_news.get_today_news_content, "Hacker News")
+    shaoshupai_content = _safe_fetch(news_shaoshupai.get_today_news_content, "少数派")
+    # kr36_content = _safe_fetch(news_36kr.get_today_news_content, "36氪")
 
     newsletter = create_final_newsletter(
         last_newsletter=last_newsletter_summary,
@@ -158,7 +170,7 @@ def generate_newsletter():
 
     # 生成 newsletter
     newsletter_filename, summary_filename = get_newsletter_filename()
-    newsletter_summary = news_utils.get_local_file_with_today(summary_filename)
+    newsletter_summary = news_utils.get_local_file_with_today(summary_filename) or ""
 
     current_datetime_formatted = news_utils.current_datetime_formatted()
     contents = [
