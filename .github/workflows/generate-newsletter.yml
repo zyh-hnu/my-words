@@ -10,6 +10,8 @@ on:
 jobs:
   generate-newsletter:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository
@@ -17,9 +19,6 @@ jobs:
       with:
         # 获取完整的提交历史，以便能够推送
         fetch-depth: 0
-        # 使用 PAT 以便能够推送到仓库并触发其他工作流
-        token: ${{ secrets.PAT }}
-        persist-credentials: true
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -73,7 +72,7 @@ jobs:
           git commit -m "📰 自动生成每日 newsletter & 日记 $(date +'%Y-%m-%d')"
           
           echo "🚀 开始推送到远程仓库..."
-          git push https://x-access-token:${{ secrets.PAT }}@github.com/zyh-hnu/my-words.git master
+          git push origin master
 
           echo "✅ 已成功提交新文件"
         fi
