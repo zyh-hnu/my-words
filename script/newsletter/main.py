@@ -4,6 +4,7 @@ import diary
 import news_utils
 import newsletter
 import push
+from llm import get_llm_stats
 
 logger = news_utils.setup_logger(__name__)
 
@@ -29,6 +30,7 @@ def main():
             diary.generate_diary_profile()
             logger.info("✓ 日记模板生成完成")
 
+        logger.info(get_llm_stats())
         push.push_deer("今日内容已生成")
     except Exception as e:
         logger.error(f"生成过程中发生错误: {e}")

@@ -7,13 +7,17 @@ import atexit
 import time
 from typing import Optional
 
-from openai import OpenAI
+from openai import OpenAI, APIError, APIConnectionError, RateLimitError
+from openai._exceptions import InternalServerError
 
 import config
 import news_utils
 import tokenizer
 
 logger = news_utils.setup_logger(__name__)
+
+_MAX_RETRIES = 3
+_BASE_DELAY = 2.0
 
 
 # 全局统计变量
@@ -64,55 +68,86 @@ def get_llm_stats() -> str:
     return llm_stats.get_summary()
 
 
+def _build_client() -> OpenAI:
+    """构建 OpenAI 客户端（复用连接池）"""
+    return OpenAI(
+        api_key=config.settings.openai_api_key,
+        base_url=config.settings.openai_base_url,
+        timeout=60.0,
+        max_retries=0,  # 自定义重试逻辑
+    )
+
+
+def _should_retry(exception: Exception) -> bool:
+    """判断错误是否值得重试"""
+    return isinstance(exception, (APIConnectionError, RateLimitError, InternalServerError))
+
+
+def _call_llm(system_prompt: str, user_prompt: str) -> str:
+    """调用 LLM，带重试机制"""
+    client = _build_client()
+    model = config.settings.llm_model
+
+    last_exception = None
+    for attempt in range(_MAX_RETRIES + 1):
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.3,
+                max_tokens=3000,
+            )
+        except Exception as e:
+            last_exception = e
+            if attempt < _MAX_RETRIES and _should_retry(e):
+                delay = _BASE_DELAY * (2 ** attempt)
+                logger.warning(f"LLM 请求失败 (第{attempt + 1}次)，{delay:.0f}s 后重试: {type(e).__name__}: {e}")
+                time.sleep(delay)
+                continue
+            raise  # 最后一次失败或不可重试的错误直接抛出
+
+        result = response.choices[0].message.content
+        if result is None:
+            raise ValueError("LLM 返回内容为空")
+        return result.strip()
+
+    # 理论上不会执行到这里，但保留兜底
+    raise last_exception  # type: ignore
+
+
 def one_shoot(system_prompt: str, user_prompt: str) -> Optional[str]:
     """
-    使用LLM对Markdown内容进行总结
+    使用LLM对内容进行总结
 
     Args:
-        system_prompt (str): 系统提示，用于指导LLM行为
-        user_prompt (str): 用户提示，包含具体的总结要求
+        system_prompt (str): 系统提示
+        user_prompt (str): 用户提示
 
     Returns:
-        Optional[str]: 总结后的内容，如果失败则返回None
+        Optional[str]: 总结后的内容，失败则返回None
     """
     start_time = time.time()
 
     try:
-        # 初始化OpenAI客户端
-        client = OpenAI(api_key=config.settings.openai_api_key, base_url=config.settings.openai_base_url)
-
-        response = client.chat.completions.create(
-            model="deepseek-chat",  # 可以根据需要修改模型
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.3,
-            max_tokens=3000,
-        )
-
-        # 计算耗时
-        end_time = time.time()
-        duration = end_time - start_time
-
-        result = response.choices[0].message.content
-        result = result.strip() if result else None
+        result = _call_llm(system_prompt, user_prompt)
+        duration = time.time() - start_time
 
         llm_stats.add_call(
-            input_msg=system_prompt + user_prompt, 
-            output_msg=result if result else "", 
-            duration=duration
+            input_msg=system_prompt + user_prompt,
+            output_msg=result,
+            duration=duration,
         )
 
-        logger.info(f"LLM总结成功 (耗时: {duration:.2f}s)")
-
+        logger.info(f"LLM 调用成功 (模型: {config.settings.llm_model}, 耗时: {duration:.2f}s)")
         return result
 
     except Exception as e:
-        end_time = time.time()
-        duration = end_time - start_time
-        logger.error(f"LLM总结时发生错误 (耗时: {duration:.2f}s): {e}")
-        raise e
+        duration = time.time() - start_time
+        logger.error(f"LLM 调用失败 ({config.settings.llm_model}, 耗时: {duration:.2f}s): {type(e).__name__}: {e}")
+        return None
 
 
 def concurrent_one_shoot(prompts: list[tuple[str, str]]) -> list[Optional[str]]:

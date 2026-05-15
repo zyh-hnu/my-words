@@ -9,6 +9,7 @@ class Settings:
 
         self.openai_api_key = self._must_get_env("OPENAI_API_KEY")
         self.openai_base_url = self._must_get_env("OPENAI_BASE_URL")
+        self.llm_model = os.getenv("LLM_MODEL", "deepseek-chat")
 
         # Newsletter 输出目录，默认为项目根目录下的 newsletters
         self.newsletter_dir = os.getenv("NEWSLETTER_DIR", self._get_default_newsletter_dir())
