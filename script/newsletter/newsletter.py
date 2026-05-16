@@ -7,7 +7,6 @@ import news_ai_news
 import news_arxiv
 import news_github_trending_daily
 import news_ithome
-import news_jiqizhixin
 import news_linuxdo
 import news_meituan
 import news_ruanyifeng
@@ -58,7 +57,6 @@ def generate_newsletter():
     _safe_fetch(lambda: news_arxiv.fetch_all_arxiv_papers(limit_per_category=10), "arXiv 论文")
     _safe_fetch(news_linuxdo.get_today_news_content, "LinuxDo")
     _safe_fetch(news_ruanyifeng.get_today_news_content, "阮一峰博客")
-    _safe_fetch(news_jiqizhixin.get_today_news_content, "机器之心")
     _safe_fetch(news_ithome.get_today_news_content, "IT之家")
     _safe_fetch(news_zhihu.get_today_news_content, "知乎热门")
 
@@ -138,12 +136,6 @@ def generate_newsletter():
     if news_utils.get_local_file_with_today(meituan_file):
         contents.append(f"## 技术博客\n")
         contents.append(f"- [美团技术团队](./{meituan_file})\n")
-        contents.append("\n---\n")
-
-    # 机器之心
-    jiqizhixin_file = news_jiqizhixin.get_today_news_file()
-    if news_utils.get_local_file_with_today(jiqizhixin_file):
-        contents.append(f"- [机器之心](./{jiqizhixin_file})\n")
         contents.append("\n---\n")
 
     # IT之家

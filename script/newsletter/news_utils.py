@@ -44,7 +44,10 @@ def get_rss_entries(rss_url: str, limit: int = 1000, timeout: int = 10) -> List[
     Returns:
         List[dict]: RSS条目列表，每个条目包含title、link、summary等信息
     """
-    response = httpx.get(rss_url, timeout=timeout)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    response = httpx.get(rss_url, headers=headers, timeout=timeout)
     response.raise_for_status()
 
     feed = feedparser.parse(response.content)
