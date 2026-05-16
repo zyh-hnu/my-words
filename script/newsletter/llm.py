@@ -7,7 +7,7 @@ import atexit
 import time
 from typing import Optional
 
-from openai import OpenAI
+import httpx
 
 import config
 import news_utils
@@ -77,24 +77,26 @@ def one_shoot(system_prompt: str, user_prompt: str) -> Optional[str]:
     start_time = time.time()
 
     try:
-        client = OpenAI(
-            api_key=config.settings.openai_api_key,
-            base_url=config.settings.openai_base_url,
-            timeout=60.0,
-        )
-
-        response = client.chat.completions.create(
-            model=config.settings.llm_model,
-            messages=[
+        url = f"{config.settings.openai_base_url}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {config.settings.openai_api_key}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": config.settings.llm_model,
+            "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            temperature=0.3,
-            max_tokens=3000,
-        )
+            "temperature": 0.3,
+            "max_tokens": 3000,
+        }
+
+        response = httpx.post(url, headers=headers, json=data, timeout=60.0)
+        response.raise_for_status()
 
         duration = time.time() - start_time
-        result = response.choices[0].message.content
+        result = response.json()["choices"][0]["message"]["content"]
         if not result:
             return None
         result = result.strip()
