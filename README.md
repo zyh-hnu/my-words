@@ -4,7 +4,7 @@
 
 ## 功能特性
 
-- **每日技术 Newsletter**：自动从 AI News、GitHub Trending、Hacker News、少数派、V2EX 等渠道抓取并生成摘要
+- **每日技术 Newsletter**：自动从 AI News、GitHub Trending、少数派、V2EX、美团技术、36氪等渠道抓取并生成摘要
 - **个人日记/复盘**：支持每日复盘日记，包含今日完成、学习、思考、问题、计划等模块
 - **自动化运行**：通过 GitHub Actions 每日自动执行
 - **本地存储**：所有内容保存在 Git 仓库中，便于版本管理和回溯
@@ -18,23 +18,16 @@ git clone <your-repo-url>
 cd my-words
 ```
 
-### 2. 配置环境变量
+### 2. 配置环境变量（可选）
 
-```bash
-cd script/newsletter
-cp .env.example .env
-```
-
-编辑 `.env` 文件，填入你的 API 密钥：
+在 `script/newsletter` 目录下创建 `.env` 文件，配置以下环境变量：
 
 ```env
-# OpenAI 兼容 API
-OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-OPENAI_BASE_URL=https://api.openai.com/v1
+# Newsletter 输出目录（可选，默认为项目根目录下的 newsletters）
+# NEWSLETTER_DIR=/path/to/newsletters
 
-# 或者使用 DeepSeek（推荐，性价比高）
-# OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# OPENAI_BASE_URL=https://api.deepseek.com
+# PushDeer 推送密钥（可选，用于发送推送通知）
+# PUSH_DEER_KEY=your_push_deer_key
 ```
 
 ### 3. 安装依赖
@@ -69,14 +62,11 @@ uv run main.py diary
 | Secret 名称 | 说明 |
 |-------------|------|
 | `PAT` | GitHub Personal Access Token（需要 repo 权限） |
-| `OPENAI_API_KEY` | OpenAI API 密钥 |
-| `OPENAI_BASE_URL` | OpenAI API 地址 |
 | `PUSH_DEER_KEY` | PushDeer 推送密钥（可选） |
 
 ### 工作流说明
 
 - `generate-newsletter.yml`：每日北京时间 8:00 自动生成 newsletter 和日记模板
-- `deploy.yml`：自动部署到 GitHub Pages（如果配置了）
 
 ## 目录结构
 
@@ -95,7 +85,9 @@ my-words/
 │       ├── main.py          # 主入口
 │       ├── newsletter.py    # Newsletter 生成逻辑
 │       ├── diary.py         # 日记生成逻辑
-│       ├── llm.py           # LLM 调用封装
+│       ├── config.py        # 配置管理
+│       ├── push.py          # 推送通知
+│       ├── news_utils.py    # 公共工具函数
 │       └── news_*.py        # 各渠道抓取脚本
 └── .github/
     └── workflows/           # GitHub Actions 配置
@@ -107,18 +99,16 @@ my-words/
 |------|------|
 | AI News | AI 领域最新动态 |
 | GitHub Trending | GitHub 热门项目 |
-| Hacker News | 技术社区热点 |
 | 少数派 | 优质技术文章 |
 | V2EX | 技术讨论社区 |
 | 美团技术团队 | 美团技术博客 |
-| Reddit | 技术频道 |
 | 36kr | 科技新闻 |
 
 ## 自定义
 
 ### 修改新闻源
 
-编辑 `script/newsletter/newsletter.py` 中的 `create_final_newsletter` 函数，调整 LLM 提示词和新闻源组合。
+编辑 `script/newsletter/newsletter.py` 中的 `generate_newsletter` 函数，调整新闻源组合。
 
 ### 修改日记模板
 

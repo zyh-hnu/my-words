@@ -2,10 +2,8 @@ name: Generate Newsletter & Diary
 
 on:
   schedule:
-    # 每天上午 8:00（北京时间，UTC+8 = 00:00 UTC）自动运行
-    # 注意：GitHub Actions 的定时任务可能会有几分钟到几十分钟的延迟（排队造成）
-    - cron: '0 0 * * *'
-  workflow_dispatch:  # 允许手动触发
+    - cron: '0 0 * * *'  # 每天北京时间 8:00
+  workflow_dispatch:
 
 jobs:
   generate-newsletter:
@@ -14,66 +12,26 @@ jobs:
       contents: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        # 获取完整的提交历史，以便能够推送
-        fetch-depth: 0
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-    
-    - name: Install uv
-      run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-    
-    - name: Navigate to newsletter directory and install dependencies
-      run: |
-        cd script/newsletter
-        uv sync
-    
-    - name: Generate newsletter and diary
-      run: |
-        cd script/newsletter
-        uv run main.py all
-      env:
-        # 这里需要设置你的环境变量，请在 GitHub Secrets 中配置
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
-        LLM_MODEL: ${{ secrets.LLM_MODEL }}
-        PUSH_DEER_KEY: ${{ secrets.PUSH_DEER_KEY }}
-    
-    - name: Configure Git
-      run: |
-        git config --local user.email "newsletter-bot@github.com"
-        git config --local user.name "Newsletter Bot"
-    
-    - name: Commit and push changes
-      run: |
-        # 显示当前时间和分支信息
-        echo "🕐 当前时间: $(date)"
-        echo "🌿 当前分支: $(git branch --show-current)"
-        echo "📂 当前目录: $(pwd)"
-        
-        # 检查是否有新文件或更改
-        git add newsletters/
-        
-        # 显示将要提交的文件
-        echo "📋 准备提交的文件:"
-        git diff --staged --name-only
-        
-        # 如果有更改，则提交
-        if git diff --staged --quiet; then
-          echo "❌ 没有新的文件需要提交"
-        else
-          echo "✅ 发现需要提交的更改，开始提交..."
-          git commit -m "📰 自动生成每日 newsletter & 日记 $(date +'%Y-%m-%d')"
-          
-          echo "🚀 开始推送到远程仓库..."
-          git push origin master
 
-          echo "✅ 已成功提交新文件"
-        fi
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    - name: Install dependencies
+      run: uv sync
+      working-directory: script/newsletter
+
+    - name: Generate newsletter
+      run: uv run main.py all
+      working-directory: script/newsletter
+
+    - name: Commit and push
+      run: |
+        git config user.name "Newsletter Bot"
+        git config user.email "bot@github.com"
+        git add newsletters/
+        git diff --staged --quiet || git commit -m "newsletter: $(date +'%Y-%m-%d')" && git push

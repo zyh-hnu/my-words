@@ -1,12 +1,10 @@
 """
 个人日记/复盘功能模块
-用于生成每日个人总结
+用于生成每日个人总结（空模板）
 """
 
 import os
-from typing import Optional
 
-import llm
 import news_utils
 
 logger = news_utils.setup_logger(__name__)
@@ -65,30 +63,6 @@ def get_diary_template() -> str:
 """
 
 
-def create_diary_from_prompt(user_input: str) -> Optional[str]:
-    """根据用户输入生成日记"""
-    system_prompt = """你是一个专业的个人助理，帮助用户整理每日复盘日记。
-请根据用户提供的信息，生成一份结构清晰、内容完整的每日复盘日记。
-
-日记应该包含以下部分：
-1. 今日完成 - 列出完成的主要工作/任务
-2. 今日学习 - 记录学到的新知识
-3. 今日思考 - 感悟、想法、反思
-4. 遇到的问题 - 问题及解决方案
-5. 明日计划 - 明天要做的事情
-6. 今日心情 - 一句话形容今天的状态
-
-请使用 Markdown 格式输出。"""
-
-    user_prompt = f"""请根据以下信息生成今日的每日复盘日记：
-
-{user_input}
-
-请生成一份完整的每日复盘日记。"""
-
-    return llm.one_shoot(system_prompt, user_prompt)
-
-
 def generate_empty_diary() -> str:
     """生成空的日记模板"""
     today = news_utils.current_date_formatted()
@@ -101,17 +75,14 @@ def save_diary(content: str) -> bool:
     return news_utils.put_local_file_with_today(filename, content)
 
 
-def get_today_diary() -> Optional[str]:
+def get_today_diary() -> str | None:
     """获取今天的日记"""
     filename = get_diary_filename()
     return news_utils.get_local_file_with_today(filename)
 
 
-def generate_diary(user_input: Optional[str] = None) -> bool:
-    """生成日记
-    
-    Args:
-        user_input: 用户输入的内容，如果为 None 则生成空模板
+def generate_diary() -> bool:
+    """生成空日记模板
     
     Returns:
         bool: 是否成功生成并保存
@@ -122,15 +93,8 @@ def generate_diary(user_input: Optional[str] = None) -> bool:
         logger.info(f"今天的日记已经存在，不重复生成")
         return True
 
-    if user_input:
-        # 根据用户输入生成日记
-        diary_content = create_diary_from_prompt(user_input)
-        if not diary_content:
-            logger.error("生成日记失败")
-            return False
-    else:
-        # 生成空模板
-        diary_content = generate_empty_diary()
+    # 生成空模板
+    diary_content = generate_empty_diary()
 
     if save_diary(diary_content):
         logger.info(f"✓ 今日日记已保存")

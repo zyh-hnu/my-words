@@ -64,7 +64,9 @@ def get_today_news_content() -> str:
     fetch_news()
 
     content = news_utils.get_local_file_with_today(filename)
-    assert content
+    if not content:
+        logger.error(f"获取少数派内容失败: {filename}")
+        return ""
     return content
 
 
