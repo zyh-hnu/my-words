@@ -32,18 +32,19 @@ def setup_logger(name: str):
 logger = setup_logger(__name__)
 
 
-def get_rss_entries(rss_url: str, limit: int = 1000) -> List[dict]:
+def get_rss_entries(rss_url: str, limit: int = 1000, timeout: int = 10) -> List[dict]:
     """
     获取RSS源的条目
 
     Args:
         rss_url (str): RSS源URL
         limit (int): 限制获取的条目数量
+        timeout (int): 请求超时时间（秒）
 
     Returns:
         List[dict]: RSS条目列表，每个条目包含title、link、summary等信息
     """
-    response = httpx.get(rss_url, timeout=10)
+    response = httpx.get(rss_url, timeout=timeout)
     response.raise_for_status()
 
     feed = feedparser.parse(response.content)

@@ -1,7 +1,7 @@
 """
 V2EX RSS Feed
 
-最热帖子: https://www.v2ex.com/feed/tab/hot.xml
+最热帖子: https://www.v2ex.com/index.xml
 技术版: https://www.v2ex.com/feed/tab/tech.xml
 """
 
@@ -10,8 +10,9 @@ import news_utils
 logger = news_utils.setup_logger(__name__)
 
 # V2EX RSS 源配置
+# hot 用全局 feed（/feed/tab/hot.xml 已废弃，返回空内容）
 V2EX_FEEDS = {
-    "hot": {"name": "最热", "url": "https://www.v2ex.com/feed/tab/hot.xml"},
+    "hot": {"name": "最热", "url": "https://www.v2ex.com/index.xml"},
     "tech": {"name": "技术", "url": "https://www.v2ex.com/feed/tab/tech.xml"},
 }
 
@@ -29,8 +30,8 @@ def fetch_news(tab: str = "hot", limit: int = 30):
     
     feed_info = V2EX_FEEDS[tab]
     logger.info(f"获取 V2EX 论坛{feed_info['name']}帖子...")
-    
-    entries = news_utils.get_rss_entries(feed_info["url"], limit=limit)
+
+    entries = news_utils.get_rss_entries(feed_info["url"], limit=limit, timeout=30)
     if not entries:
         logger.warning(f"没有获取到 V2EX {feed_info['name']}帖子")
         return None
