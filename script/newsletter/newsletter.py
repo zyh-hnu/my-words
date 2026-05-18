@@ -11,6 +11,8 @@ import news_linuxdo
 import news_meituan
 import news_ruanyifeng
 import news_shaoshupai
+import news_36kr
+import news_jiqizhixin
 import news_utils
 import news_v2ex
 import news_zhihu
@@ -59,6 +61,10 @@ def generate_newsletter():
     _safe_fetch(news_ruanyifeng.get_today_news_content, "阮一峰博客")
     _safe_fetch(news_ithome.get_today_news_content, "IT之家")
     _safe_fetch(news_zhihu.get_today_news_content, "知乎热门")
+
+    # 可选订阅源
+    _safe_fetch(news_36kr.get_today_news_content, "36氪")
+    _safe_fetch(news_jiqizhixin.get_today_news_content, "机器之心")
 
     # 生成索引页
     current_datetime = news_utils.current_datetime_formatted()
@@ -138,6 +144,21 @@ def generate_newsletter():
         contents.append(f"- [美团技术团队](./{meituan_file})\n")
         contents.append("\n---\n")
 
+    # 36氪
+    kr36_file = news_36kr.get_today_news_file()
+    if news_utils.get_local_file_with_today(kr36_file):
+        contents.append(f"## 商业科技\n")
+        contents.append(f"- [36氪](./{kr36_file})\n")
+        contents.append("\n---\n")
+
+    # 机器之心
+    jiqizhixin_file = news_jiqizhixin.get_today_news_file()
+    if news_utils.get_local_file_with_today(jiqizhixin_file):
+        contents.append(f"- [机器之心](./{jiqizhixin_file})\n")
+    if contents[-1] == "---\n":
+        contents.append("\n")
+    contents.append("\n---\n")
+
     # IT之家
     ithome_file = news_ithome.get_today_news_file()
     if news_utils.get_local_file_with_today(ithome_file):
@@ -165,7 +186,7 @@ def generate_newsletter_profile():
     newsletter_homepage = []
     
     for i, file in enumerate(newsletter_files):
-        date_formatted = file.parent.name.split("/")[-1]
+        date_formatted = file.parent.name
         
         if i == 0:  # 处理最新的 newsletter
             content = file.read_text(encoding="utf-8")

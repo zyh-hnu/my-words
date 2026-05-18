@@ -25,7 +25,7 @@
 
 | 名称 | Feed URL | 说明 |
 |------|----------|------|
-| V2EX 最热 | `https://www.v2ex.com/feed/tab/hot.xml` | 今日热门 |
+| V2EX 最热 | `https://www.v2ex.com/index.xml` | 今日热门 |
 | V2EX 技术 | `https://www.v2ex.com/feed/tab/tech.xml` | 技术讨论 |
 | LinuxDo 最新话题 | `https://linux.do/latest.rss` | 开发者社区 |
 

@@ -217,7 +217,15 @@ def get_entry_datetime(entry) -> Optional[datetime]:
             second=published_parsed.tm_sec,
         )
     elif "updated_parsed" in entry:
-        return dateparser.parse(entry["updated_parsed"])
+        updated_parsed = entry["updated_parsed"]
+        return datetime(
+            year=updated_parsed.tm_year,
+            month=updated_parsed.tm_mon,
+            day=updated_parsed.tm_mday,
+            hour=updated_parsed.tm_hour,
+            minute=updated_parsed.tm_min,
+            second=updated_parsed.tm_sec,
+        )
     elif "published" in entry:
         return dateparser.parse(entry["published"])
     elif "updated" in entry:

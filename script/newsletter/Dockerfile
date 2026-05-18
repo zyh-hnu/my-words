@@ -11,11 +11,11 @@ RUN sed -i 's|http://deb.debian.org|http://mirrors.aliyun.com|g' /etc/apt/source
 WORKDIR /app
 
 # 复制依赖文件
-COPY pyproject.toml uv.lock /app/
+COPY pyproject.toml /app/
 
 # 安装 uv 和 Python 依赖
 RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple uv
-RUN uv venv && uv sync
+RUN uv sync --no-lock
 
 # 复制源代码
 COPY . .
