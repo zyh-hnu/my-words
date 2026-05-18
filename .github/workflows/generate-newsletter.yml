@@ -40,4 +40,5 @@ jobs:
         git config user.name "Newsletter Bot"
         git config user.email "bot@github.com"
         git add newsletters/
-        git diff --staged --quiet || git commit -m "newsletter: $(date +'%Y-%m-%d')" && git push
+        git commit -m "newsletter: $(date +'%Y-%m-%d')" || true
+        git push
